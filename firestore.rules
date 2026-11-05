@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'zubairkhan920859@gmail.com' ||
+        exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Products: Public read for customers; admin write
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Categories: Public read; admin write
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Website Settings: Public read; admin write
+    match /websiteSettings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Orders: Anyone can create an order with valid fields; only admin can read, update, or delete
+    match /orders/{orderId} {
+      allow create: if request.resource.data.customerName is string &&
+                       request.resource.data.customerName.size() <= 100 &&
+                       request.resource.data.customerPhone is string &&
+                       request.resource.data.customerPhone.size() <= 30 &&
+                       request.resource.data.totalAmount is number &&
+                       request.resource.data.status in ['pending', 'confirmed', 'completed', 'cancelled'];
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Admin Users collection: only admins can view or manage
+    match /adminUsers/{userId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

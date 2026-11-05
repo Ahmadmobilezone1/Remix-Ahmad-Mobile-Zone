@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Mobile phone or accessory in shop catalog",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 150 },
+        "brand": { "type": "string", "maxLength": 50 },
+        "category": { "type": "string", "maxLength": 50 },
+        "price": { "type": "number" },
+        "originalPrice": { "type": "number" },
+        "discount": { "type": "number" },
+        "ram": { "type": "string", "maxLength": 30 },
+        "storage": { "type": "string", "maxLength": 30 },
+        "color": { "type": "string", "maxLength": 50 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "stock": { "type": "string", "enum": ["in_stock", "out_of_stock", "limited_stock"] },
+        "isStock": { "type": "boolean" },
+        "isFeatured": { "type": "boolean" },
+        "isSpecialOffer": { "type": "boolean" },
+        "imageUrl": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "brand", "category", "price", "stock"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Catalog category for mobile devices and accessories",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 60 },
+        "slug": { "type": "string", "maxLength": 60 },
+        "description": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["name", "slug"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order placed on the website or via WhatsApp",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string", "maxLength": 100 },
+        "customerPhone": { "type": "string", "maxLength": 30 },
+        "customerCity": { "type": "string", "maxLength": 50 },
+        "customerAddress": { "type": "string", "maxLength": 300 },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"] },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["customerName", "customerPhone", "totalAmount", "status"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized administrator user profile",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["admin", "superadmin"] },
+        "addedAt": { "type": "string" }
+      },
+      "required": ["email", "role"]
+    },
+    "WebsiteSettings": {
+      "title": "WebsiteSettings",
+      "description": "General shop details and contact settings editable by admin",
+      "type": "object",
+      "properties": {
+        "shopName": { "type": "string", "maxLength": 100 },
+        "location": { "type": "string", "maxLength": 200 },
+        "whatsappNumber": { "type": "string", "maxLength": 30 },
+        "businessHours": { "type": "string", "maxLength": 200 },
+        "announcement": { "type": "string", "maxLength": 300 }
+      },
+      "required": ["shopName", "location", "whatsappNumber"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "All phones and accessories available in the shop"
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Phone brands and accessory categories"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Customer purchase orders"
+    },
+    "/adminUsers/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Allowed admin users"
+    },
+    "/websiteSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/WebsiteSettings" },
+      "description": "Shop content and hours"
+    }
+  }
+}

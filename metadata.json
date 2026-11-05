@@ -1,0 +1,6 @@
+{
+  "name": "Ahmad Mobile Zone",
+  "description": "Premier mobile phone store in Budhni, Peshawar, Pakistan. Specializing in iPhones, Samsung, Xiaomi, accessories, and instant WhatsApp ordering.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
