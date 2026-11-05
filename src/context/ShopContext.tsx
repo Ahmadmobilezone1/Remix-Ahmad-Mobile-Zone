@@ -182,8 +182,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Listen to Firestore orders when admin is logged in
-  const isSuperAdminEmail = currentUser?.email === 'zubairkhan920859@gmail.com';
-  const isAdmin = Boolean(currentUser || isDemoAdmin || isSuperAdminEmail);
+  const isAdmin = Boolean(currentUser || isDemoAdmin);
 
   useEffect(() => {
     if (!isAdmin) return;

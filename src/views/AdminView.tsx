@@ -283,7 +283,8 @@ export const AdminView: React.FC = () => {
                   <input
                     type="email"
                     required
-                    placeholder="zubairkhan920859@gmail.com"
+                    placeholder="Enter admin email"
+                    autoComplete="email"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#181924] border border-gray-700 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400"
@@ -300,7 +301,8 @@ export const AdminView: React.FC = () => {
                   <input
                     type="password"
                     required
-                    placeholder="••••••••"
+                    placeholder=""
+                    autoComplete="current-password"
                     value={authPassword}
                     onChange={(e) => setAuthPassword(e.target.value)}
                     className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#181924] border border-gray-700 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400"
@@ -330,10 +332,6 @@ export const AdminView: React.FC = () => {
               <UserCheck className="w-3.5 h-3.5" />
               <span>Enter Demo Admin Mode</span>
             </button>
-          </div>
-
-          <div className="text-center text-[10px] text-gray-500">
-            Authorized administrator: zubairkhan920859@gmail.com
           </div>
         </div>
       </div>
