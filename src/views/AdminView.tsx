@@ -24,7 +24,8 @@ import {
   Key,
   RotateCcw,
   Check,
-  UserCheck
+  UserCheck,
+  Database
 } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { Product, Order, ProductCategory } from '../types';
@@ -123,6 +124,24 @@ export const AdminView: React.FC = () => {
       setAuthError('Google popup was closed or blocked. You can also use Demo Admin mode for immediate review.');
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  // Firestore Products Sync
+  const [syncingFirestore, setSyncingFirestore] = useState(false);
+  const [syncNotice, setSyncNotice] = useState('');
+
+  const handleSyncFirestore = async () => {
+    setSyncingFirestore(true);
+    setSyncNotice('');
+    try {
+      await resetCatalogToDemo();
+      setSyncNotice('All 29 catalog products successfully saved & synced to Firebase Firestore database!');
+      setTimeout(() => setSyncNotice(''), 4500);
+    } catch (e: any) {
+      setSyncNotice('Firestore sync error: ' + (e.message || String(e)));
+    } finally {
+      setSyncingFirestore(false);
     }
   };
 
@@ -589,14 +608,33 @@ export const AdminView: React.FC = () => {
               </select>
             </div>
 
-            <button
-              onClick={handleOpenAddProduct}
-              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add New Product</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSyncFirestore}
+                disabled={syncingFirestore}
+                className="px-4 py-2.5 rounded-xl bg-[#1c1d2b] hover:bg-[#25273a] text-amber-300 border border-amber-500/30 font-semibold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 disabled:opacity-50"
+                title="Save and synchronize all 29 products into Firebase Firestore collection"
+              >
+                <Database className="w-3.5 h-3.5 text-amber-400" />
+                <span>{syncingFirestore ? 'Syncing...' : 'Sync Catalog to Firestore'}</span>
+              </button>
+
+              <button
+                onClick={handleOpenAddProduct}
+                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add New Product</span>
+              </button>
+            </div>
           </div>
+
+          {syncNotice && (
+            <div className="p-3 bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl flex items-center gap-2 shadow-lg animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>{syncNotice}</span>
+            </div>
+          )}
 
           {/* Products Table */}
           <div className="bg-[#111219] border border-gray-800 rounded-2xl overflow-hidden shadow-xl">

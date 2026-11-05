@@ -3,6 +3,8 @@ import { getAuth } from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
+  setDoc,
+  writeBatch,
   getDocFromServer, 
   collection, 
   getDocs, 
@@ -87,6 +89,8 @@ testConnection();
 export {
   collection,
   doc,
+  setDoc,
+  writeBatch,
   getDocs,
   addDoc,
   updateDoc,

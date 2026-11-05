@@ -7,6 +7,8 @@ import {
   collection, 
   getDocs, 
   addDoc, 
+  setDoc,
+  writeBatch,
   updateDoc, 
   deleteDoc, 
   doc, 
@@ -47,6 +49,7 @@ interface ShopContextType {
   updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   resetCatalogToDemo: () => Promise<void>;
+  syncInitialProductsToFirestore: () => Promise<void>;
   
   // Orders
   orders: Order[];
@@ -69,21 +72,12 @@ interface ShopContextType {
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = 'ahmad_mobile_zone_cart';
-const LOCAL_PRODUCTS_KEY = 'ahmad_mobile_zone_products';
 const LOCAL_ORDERS_KEY = 'ahmad_mobile_zone_orders';
 const LOCAL_SETTINGS_KEY = 'ahmad_mobile_zone_settings';
 
 export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Products state
-  const [products, setProducts] = useState<Product[]>(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_PRODUCTS_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Could not read cached products:', e);
-    }
-    return INITIAL_PRODUCTS;
-  });
+  // Products state (Pure Firestore Database - No LocalStorage)
+  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
   // Cart state
@@ -161,10 +155,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             fetched.push({ id: docSnap.id, ...docSnap.data() } as Product);
           });
           setProducts(fetched);
-          localStorage.setItem(LOCAL_PRODUCTS_KEY, JSON.stringify(fetched));
         } else {
-          // If Firestore is empty, use initial products
-          setProducts((prev) => (prev.length > 0 ? prev : INITIAL_PRODUCTS));
+          // If Firestore collection has no documents yet, use initial catalog
+          setProducts(INITIAL_PRODUCTS);
         }
         setLoadingProducts(false);
       },
@@ -282,36 +275,30 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const cartSubtotal = cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
 
-  // Product management actions
+  // Product management actions (Direct Firestore Database - No LocalStorage)
   const addProduct = async (prodData: Omit<Product, 'id'>): Promise<string> => {
-    const newId = 'prod-' + Date.now();
+    const productsCollection = collection(db, 'products');
+    const docRef = doc(productsCollection);
     const productWithId: Product = {
       ...prodData,
-      id: newId,
+      id: docRef.id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    // Optimistically update local
-    setProducts((prev) => [productWithId, ...prev]);
-    localStorage.setItem(LOCAL_PRODUCTS_KEY, JSON.stringify([productWithId, ...products]));
-
     try {
-      const docRef = await addDoc(collection(db, 'products'), productWithId);
+      await setDoc(docRef, productWithId);
       return docRef.id;
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, 'products');
-      return newId;
+      return docRef.id;
     }
   };
 
   const updateProduct = async (id: string, updates: Partial<Product>): Promise<void> => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p))
-    );
-
     try {
-      await updateDoc(doc(db, 'products', id), {
+      const productDocRef = doc(db, 'products', id);
+      await updateDoc(productDocRef, {
         ...updates,
         updatedAt: new Date().toISOString(),
       });
@@ -321,7 +308,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteProduct = async (id: string): Promise<void> => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
     try {
       await deleteDoc(doc(db, 'products', id));
     } catch (err) {
@@ -329,9 +315,24 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const syncInitialProductsToFirestore = async (): Promise<void> => {
+    try {
+      const batch = writeBatch(db);
+      for (const prod of INITIAL_PRODUCTS) {
+        const docRef = doc(db, 'products', prod.id);
+        batch.set(docRef, {
+          ...prod,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      await batch.commit();
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'products');
+    }
+  };
+
   const resetCatalogToDemo = async (): Promise<void> => {
-    setProducts(INITIAL_PRODUCTS);
-    localStorage.setItem(LOCAL_PRODUCTS_KEY, JSON.stringify(INITIAL_PRODUCTS));
+    await syncInitialProductsToFirestore();
   };
 
   // Orders
@@ -439,6 +440,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateProduct,
         deleteProduct,
         resetCatalogToDemo,
+        syncInitialProductsToFirestore,
         orders,
         loadingOrders,
         placeOrder,
